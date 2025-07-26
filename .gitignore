@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Environment variables and secrets
+.env
+env/
+.venv/
+.env.*
+.env.dev
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+
+# Test and coverage outputs
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache/
+pytest_cache/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode
+.vscode/
+
+# Workspace settings
+*.code-workspace 
