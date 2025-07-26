@@ -1,46 +1,63 @@
-## Kailash – An AI-Driven Timesheet Management
+# manage-tsai
 
-### 🌟 Purpose
-
-To demonstrate a working Proof of Concept (PoC) for a system that:
-
-1. Reviews and analyzes timesheets (CSV/Excel)
-2. Identifies anomalies using sample rules
-3. Reaches out to the user to correct issues using methods including Email and SMS
-
-This PoC is intentionally scoped to **manual triggers**, **hardcoded rules**, and **a single alert channel**. However, it lays the groundwork for an enterprise-scale, prompt, and self-learning solution intended to serve the needs of large, multi-national organizations.
+A PoC for managing consulting operations, focused on validating timesheets using rule-based checks and delivering contextual notifications via email, SMS, voice, and WhatsApp — with future support for Agentic AI–driven follow-ups.
 
 ---
 
-### 🔧 In-Scope Features
+## 🌟 Purpose
+
+This project demonstrates a working Proof of Concept (PoC) for automating timesheet validation and alerting in a consulting business context. It is designed to reduce manual effort and improve compliance by integrating intelligent rule-checking and multi-channel notifications.
+
+---
+
+## ✅ In-Scope Features (PoC Phase)
 
 | Area              | Details                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------- |
-| **Data Input**    | Manual upload via CLI (local CSV/XLS file)                                                  |
-| **Rules Applied** | - More than 8 hours/day  <br>- Weekend or holiday entry  <br>- Missing entries for workdays |
-| **Alerting**      | One channel to start: SMS (via Twilio or mock)  <br>Templated message format                |
-| **Logging**       | Local log of alerts and violations (JSON or SQLite)                                         |
+|-------------------|---------------------------------------------------------------------------------------------|
+| **Data Input**     | Manual upload via CLI (CSV/XLSX timesheets)                                                |
+| **Validation Rules** | - More than 8 hours/day<br>- Weekend or holiday work<br>- Missing weekday entries       |
+| **Notifications**   | Email and mock SMS based on user preferences<br>Console output for observability          |
+| **Configuration**   | `.env.dev` for credentials and routing<br>Employee directory supports multi-channel prefs |
+| **Logging**         | Alerts and violations saved to JSON (SQLite planned)                                      |
 
 ---
 
-### 🔒 Not Included in This PoC
+## 🔒 Not Included in This PoC
 
-* Web UI or dashboards
-* Real-time or scheduled ingestion
-* Alert retries or escalation logic
-* Agentic/AI follow-up or resolution handling
+* Web-based upload or dashboards (coming next)
+* Real-time ingestion (e.g., via API, DB)
+* Retry/escalation logic
+* Agentic AI reasoning (planned)
 * Authentication, authorization, user roles
 
 ---
 
-### 🛠️ Designed for Future Growth
+## 🔄 Designed for Growth
 
-This PoC **does not implement** AI/agentic capabilities, but it is structured to allow for:
+This PoC is structured for easy extension:
 
-* Plug-and-play alert channels
-* Rule expansion
-* Message personalization
-* Intelligent follow-up
+- Plug-and-play notification channels (email, SMS, voice, WhatsApp)
+- Future UI for file uploads, rule inspection, and compliance reporting
+- Agentic AI reasoning for choosing the best channel/timing
+- Secure config via cloud secret managers
 
-These can be layered on post-PoC as part of the broader **Realtime Event Notification Platform**.
+---
 
+## 🧠 Architecture Direction
+
+- **RENO (Realtime Event Notification Orchestrator)**: A future module that will handle adaptive, rule- and context-aware delivery strategies.
+- **Agentic Follow-up**: Notification behavior will eventually adapt based on past user response history and alert severity.
+
+---
+
+## 🚀 Run Locally
+
+```bash
+# Setup
+pip install -r requirements.txt
+
+# Add your .env.dev with email credentials
+cp .env.sample .env.dev
+
+# Run the PoC
+python main.py data/sample_timesheet.csv
