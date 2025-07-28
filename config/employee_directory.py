@@ -22,14 +22,14 @@ employee_profiles = {
     "E004": {
         "name": "Carlos Alvarez",      # Mexico
         "email": "carlos.alvarez@mailinator.com",
-        "phone": "+19721234567",       # Virtual #2
-        "notification_prefs": ["voice", "sms"]
+        "phone": "+14256544694",       # Virtual #2
+        "notification_prefs": ["sms"]
     },
     "E005": {
         "name": "Sophie Dubois",       # France
         "email": "sophie.dubois@mailinator.com",
-        "phone": "+1XXXXXXXX05",       # Optional 5th contact
-        "notification_prefs": ["sms"]
+        "phone": "+14253131912",       # Optional 5th contact
+        "notification_prefs": ["voice"]
     }
 }
 

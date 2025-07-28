@@ -2,8 +2,15 @@
 
 from config.employee_directory import get_profile
 from notifier.email_notifier import send_email
+from notifier.sms_notifier import send_sms
+from notifier.voice_notifier import send_voice
 from notifier.print_notifier import notify as print_notify
-# from notifier.sms_notifier import send_sms  # to be added next
+
+NOTIFIER_REGISTRY = {
+    "email": send_email,
+    "sms": send_sms,
+    "voice": send_voice
+}
 
 def notify(violation):
     employee_id = violation["employee_id"]
@@ -18,13 +25,14 @@ def notify(violation):
     # Always print for observability
     print_notify(violation)
 
-    # Naive priority handler (first available channel)
     for channel in prefs:
-        if channel == "email":
-            send_email(violation, profile["email"])
-            break
-        elif channel == "sms":
-            print(f"ℹ️ SMS notification would be sent to {profile['phone']}")
-            break
+        handler = NOTIFIER_REGISTRY.get(channel)
+        if handler:
+            try:
+                contact = profile.get("email") if channel == "email" else profile.get("phone")
+                handler(violation, contact)
+                break
+            except Exception as e:
+                print(f"❌ {channel.upper()} notification failed: {e}")
         else:
-            print(f"⚠️ Unknown channel: {channel}")
+            print(f"⚠️ Unknown channel '{channel}' for {employee_id}")

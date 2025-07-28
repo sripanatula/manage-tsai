@@ -16,35 +16,32 @@ This project demonstrates a working Proof of Concept (PoC) for automating timesh
 | -------------------- | ----------------------------------------------------------------------------------------- |
 | **Data Input**       | Manual upload via CLI (CSV/XLSX timesheets)                                               |
 | **Validation Rules** | - More than 8 hours/day<br>- Weekend or holiday work<br>- Missing weekday entries         |
-| **Notifications**    | Email and mock SMS based on user preferences<br>Console output for observability          |
+| **Notifications**    | Email, VOICE and mock SMS based on user preferences<br>Console output for observability          |
 | **Configuration**    | `.env.dev` for credentials and routing<br>Employee directory supports multi-channel prefs |
 | **Logging**          | Alerts and violations saved to JSON (SQLite planned)                                      |
+                                       |
+---
 
 ---
 
-### 📞 Voice Call Integration (Twilio Voice API)
+### ☎️ Voice Call Notifications (Twilio)
 
-To enable voice calls from the notifier:
+Voice notifications are triggered for employees who have `"voice"` configured in `config/employee_preferences.yaml`.
 
-1. Run the voice server locally:
+To enable:
 
-   ```bash
-   python notifier/serve_voice.py
-   ```
+1. Start the local voice callback server:
 
-2. Expose it using ngrok:
+    ```bash
+    source .venv/bin/activate
+    python notifier/serve_voice.py
+    ```
 
-   ```bash
-   ngrok http 5000
-   ```
+2. Ensure `VOICE_TWIML_URL` in `.env.dev` points to your public ngrok URL (e.g., `https://abc.ngrok-free.app`)
+3. The app appends `/voice?message=...` when placing calls, and expects a TwiML response at `/voice`.
 
-3. Copy the ngrok URL and add it to `.env.dev`:
+📌 This allows PoC-level voice delivery using Twilio programmable voice.
 
-   ```env
-   VOICE_TWIML_URL=https://your-ngrok-url.ngrok-free.app/voice
-   ```
-
-4. Voice alerts will now use this endpoint to deliver spoken messages.
 
 ⚠️ Note: This endpoint must be reachable by Twilio. You may need to restart ngrok if your machine sleeps or restarts.
 
