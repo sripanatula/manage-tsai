@@ -1,35 +1,75 @@
 # notifier/voice_notifier.py
 
-import os
+from logger import log_debug, log_info, log_error
 from twilio.rest import Client
-from urllib.parse import urlencode
 from dotenv import load_dotenv
+import os
+from urllib.parse import urlencode
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.dev"))
+load_dotenv(dotenv_path=".env.dev")
 
-class VoiceNotifier:
-    def __init__(self):
-        self.account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-        self.auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-        self.from_number = os.getenv("TWILIO_FROM_NUMBER")
-        self.base_url = os.getenv("VOICE_TWIML_URL")
+# Twilio configuration
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER")
+TWILIO_CALLBACK_BASE_URL = os.getenv("TWILIO_CALLBACK_BASE_URL")
+VOICE_ENABLED = os.getenv("VOICE_ENABLED", "false").lower() == "true"
 
-        if not all([self.account_sid, self.auth_token, self.from_number, self.base_url]):
-            raise ValueError("Missing required environment variables for VoiceNotifier")
-
-        self.client = Client(self.account_sid, self.auth_token)
-
-    def send(self, violation, to_number):
-        message = violation.get("message", "Timesheet issue detected. Please review.")
-        twiml_url = f"{self.base_url}/voice?{urlencode({'message': message})}"
-        
-        call = self.client.calls.create(
-            to=to_number,
-            from_=self.from_number,
-            url=twiml_url
-        )
-        print(f"📞 Voice call initiated. Call SID: {call.sid}")
-
+# Initialize Twilio client
+client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    except Exception as e:
+        print(f"❌ Failed to initialize Twilio client: {e}")
+        client = None
 
 def send_voice(violation, to_number):
-    VoiceNotifier().send(violation, to_number)
+    """
+    Initiates a Twilio voice call with a violation message.
+    """
+    if not client:
+        log_error("Twilio client not initialized. Check configuration.", {})
+        return
+
+    log_debug("Preparing voice call", {
+        "employee_id": violation.get("employee_id"),
+        "date": violation.get("date"),
+        "to": to_number
+    })
+
+    message_text = f"Timesheet issue detected on {violation['date']}: {violation['violation']}."
+
+    if not VOICE_ENABLED:
+        log_info("Dry-run: Voice call not initiated (VOICE_ENABLED=false)", {
+            "to": to_number,
+            "message": message_text
+        })
+        return
+    query_params = urlencode({"message": message_text})
+    callback_url = f"{TWILIO_CALLBACK_BASE_URL}/voice?{query_params}"
+
+    try:
+        call = client.calls.create(
+            twiml=None,
+            url=callback_url,
+            to=to_number,
+            from_=TWILIO_FROM_NUMBER
+        )
+
+        log_info("Voice call initiated", {
+            "employee_id": violation.get("employee_id"),
+            "date": violation.get("date"),
+            "violation": violation.get("violation"),
+            "to": to_number,
+            "sid": call.sid,
+            "status": call.status
+        })
+
+    except Exception as e:
+        log_error("Failed to initiate voice call", {
+            "employee_id": violation.get("employee_id"),
+            "date": violation.get("date"),
+            "to": to_number,
+            "error": str(e)
+        })

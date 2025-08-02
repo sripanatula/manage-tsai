@@ -2,6 +2,7 @@
 
 import pandas as pd
 import os
+from logger import log_info, log_error, log_debug
 
 def parse_timesheet(file_path):
     """
@@ -32,8 +33,17 @@ def parse_timesheet(file_path):
         # Convert date column to datetime
         df['date'] = pd.to_datetime(df['date'])
 
+        log_info("Timesheet parsed successfully", {
+            "file_path": file_path,
+            "rows": len(df),
+            "columns": list(df.columns)
+        })
+
         return df
 
     except Exception as e:
-        print(f"❌ Failed to parse timesheet: {e}")
+        log_error("Failed to parse timesheet", {
+            "file_path": file_path,
+            "error": str(e)
+        })
         raise

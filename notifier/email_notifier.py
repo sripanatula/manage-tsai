@@ -2,6 +2,7 @@
 
 import smtplib
 from email.mime.text import MIMEText
+from logger import log_info, log_error
 from dotenv import load_dotenv
 import os
 
@@ -19,6 +20,7 @@ def send_email(violation, recipient_email):
     Sends an email about the violation to the specified recipient.
     """
     if not SENDER_EMAIL or not SENDER_PASSWORD:
+        log_error("Missing email credentials. check .env.dev")
         print("❌ Missing email credentials in environment. Check .env.dev.")
         return
 
@@ -39,6 +41,8 @@ def send_email(violation, recipient_email):
             server.starttls()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
-        print(f"📧 Email sent to {recipient_email}")
+            log_info("Email sent", {"to": recipient_email})
+
     except Exception as e:
-        print(f"❌ Failed to send email: {e}")
+        log_error("Failed to send email", {"to": recipient_email, "error": str(e)})
+
