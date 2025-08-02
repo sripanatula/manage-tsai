@@ -1,6 +1,7 @@
 # rules/validate_hours.py
 
 import pandas as pd
+from logger import log_info, log_error, log_debug
 
 def validate(df):
     """
@@ -57,5 +58,11 @@ def validate(df):
                     'date': str(day),
                     'violation': 'Missing timesheet entry for workday'
                 })
+
+    log_info("Timesheet validation completed", {
+        "total_violations": len(violations),
+        "employees_checked": len(all_employees),
+        "date_range": f"{min(all_dates)} to {max(all_dates)}"
+    })
 
     return violations

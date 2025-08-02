@@ -1,42 +1,82 @@
 # notifier/sms_notifier.py
-
-import os
-from dotenv import load_dotenv
+from logger import log_debug, log_info, log_error
 from twilio.rest import Client
-from twilio.base.exceptions import TwilioRestException
+from dotenv import load_dotenv
+import os
 
 load_dotenv(dotenv_path=".env.dev")
 
+# Twilio configuration
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER")
-TWILIO_MESSAGING_SERVICE_SID = os.getenv("TWILIO_MESSAGING_SERVICE_SID")
+TWILIO_CALLBACK_BASE_URL = os.getenv("TWILIO_CALLBACK_BASE_URL")
+SMS_ENABLED = os.getenv("SMS_ENABLED", "false").lower() == "true"
 
-client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+# Initialize Twilio client
+client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    except Exception as e:
+        print(f"❌ Failed to initialize Twilio client: {e}")
+        client = None
 
-def send_sms(to_number: str, message: str, dry_run: bool = False):
-    print("DEBUG:", os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
-    if dry_run:
-        
-        print(f"[DRY RUN] SMS to {to_number}: {message}")
+def send_sms(violation, to_number):
+    """
+    Sends an SMS via Twilio for the given violation to the specified number.
+    """
+    if not client:
+        log_error("Twilio client not initialized. Check configuration.", {})
+        return
+
+    log_debug("Preparing SMS", {
+        "employee_id": violation.get("employee_id"),
+        "date": violation.get("date"),
+        "to": to_number
+    })
+    
+    message_text = (
+        f"Timesheet Alert:\n"
+        f"Employee ID: {violation['employee_id']}\n"
+        f"Date: {violation['date']}\n"
+        f"Violation: {violation['violation']}"
+    )
+
+    if not SMS_ENABLED:
+        log_info("Dry-run: SMS not sent (SMS_ENABLED=false)", {
+            "to": to_number,
+            "message": message_text
+        })
         return
 
     try:
         message = client.messages.create(
-            body=message,
-            # from_=TWILIO_FROM_NUMBER,
-            messaging_service_sid=os.getenv("TWILIO_MESSAGING_SERVICE_SID"),
-            to=to_number
+            to=to_number,
+            from_=TWILIO_FROM_NUMBER,
+            body=message_text,
+            status_callback=f"{TWILIO_CALLBACK_BASE_URL}/sms-status"
         )
-        msg_status = client.messages(message.sid).fetch()
-        print(f"✅ Sent SMS to {to_number} (SID: {message.sid})")
-    
-        if msg_status.status in ['undelivered', 'failed']:
-            print(f"⚠️  Delivery failed: {msg_status.error_code} - {msg_status.error_message}")
-        else:
-            print(f"✅ SMS delivered to {to_number} (SID: {message.sid}, Status: {msg_status.status})")
+
+        log_info("SMS sent", {
+            "employee_id": violation.get("employee_id"),
+            "date": violation.get("date"),
+            "violation": violation.get("violation"),
+            "to": to_number,
+            "sid": message.sid
+        })
+
+        # Optionally log delivery status if available immediately
+        if message.status:
+            log_debug("SMS status", {
+                "sid": message.sid,
+                "status": message.status
+            })
 
     except Exception as e:
-        print(f"❌ Failed to send SMS to {to_number}: {e}")
-    except TwilioRestException as e:
-        print(f"❌ Twilio Error {e.code}: {e.msg}")
+        log_error("Failed to send SMS", {
+            "employee_id": violation.get("employee_id"),
+            "date": violation.get("date"),
+            "to": to_number,
+            "error": str(e)
+        })
